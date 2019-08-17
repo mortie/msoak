@@ -79,8 +79,8 @@ static void hsv_to_rgb(
 
 static void color(int depth, FILE *out1, FILE *out2) {
 	if (depth == 0) {
-		fprintf(out1, "\x1b[0m");
-		fprintf(out2, "\x1b[0m");
+		fprintf(out1, "\x1b[39m");
+		fprintf(out2, "\x1b[39m");
 	} else {
 		double h = ((double)depth - 0.5) * 60;
 		double s = 0.76, v = 1;
@@ -107,7 +107,7 @@ static void process(char c, FILE *out1, FILE *out2) {
 		putc(c, out1);
 		putc(c, out2);
 		color(--depth, out1, out2);
-	} else {
+	} else if ( c != '\r') {
 		putc(c, out1);
 		putc(c, out2);
 	}
@@ -121,7 +121,7 @@ int main(int argc, char *argv[]) {
 
 	const char *pager = getenv("MSOAK_PAGER");
 	if (pager == NULL)
-		pager = "less --raw-control-chars";
+		pager = "less --RAW-CONTROL-CHARS";
 
 	FILE *output = stderr;
 	FILE *outfile = tmpfile();
