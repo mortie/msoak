@@ -5,6 +5,7 @@
 #include <sys/wait.h>
 #include <errno.h>
 #include <math.h>
+#include <signal.h>
 
 // Adapted from https://www.programmingalgorithms.com/algorithm/hsv-to-rgb?lang=C
 static void hsv_to_rgb(
