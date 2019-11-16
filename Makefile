@@ -1,4 +1,4 @@
-LDFLAGS += -lutil -lm
+LDLIBS += -lutil -lm
 CFLAGS += -Wall -Wextra -Wpedantic
 PREFIX ?= /usr/local
 DESTDIR ?=
