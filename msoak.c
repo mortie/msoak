@@ -7,89 +7,23 @@
 #include <math.h>
 #include <signal.h>
 
-// Adapted from https://www.programmingalgorithms.com/algorithm/hsv-to-rgb?lang=C
-static void hsv_to_rgb(
-		double hsv_h, double hsv_s, double hsv_v,
-		unsigned char *rgb_r, unsigned char *rgb_g, unsigned char *rgb_b) {
-	double r = 0, g = 0, b = 0;
-
-	if (hsv_s == 0) {
-		r = hsv_v;
-		g = hsv_v;
-		b = hsv_v;
-	} else {
-		int i;
-		double f, p, q, t;
-
-		if (hsv_h == 360)
-			hsv_h = 0;
-		else
-			hsv_h = hsv_h / 60;
-
-		i = (int)trunc(hsv_h);
-		f = hsv_h - i;
-
-		p = hsv_v * (1.0 - hsv_s);
-		q = hsv_v * (1.0 - (hsv_s * f));
-		t = hsv_v * (1.0 - (hsv_s * (1.0 - f)));
-
-		switch (i)
-		{
-		case 0:
-			r = hsv_v;
-			g = t;
-			b = p;
-			break;
-
-		case 1:
-			r = q;
-			g = hsv_v;
-			b = p;
-			break;
-
-		case 2:
-			r = p;
-			g = hsv_v;
-			b = t;
-			break;
-
-		case 3:
-			r = p;
-			g = q;
-			b = hsv_v;
-			break;
-
-		case 4:
-			r = t;
-			g = p;
-			b = hsv_v;
-			break;
-
-		default:
-			r = hsv_v;
-			g = p;
-			b = q;
-			break;
-		}
-	}
-
-	*rgb_r = r * 255;
-	*rgb_g = g * 255;
-	*rgb_b = b * 255;
-}
-
 static void color(int depth, FILE *out1, FILE *out2) {
+	static char *colors[] = {
+		"\x1b[31m",
+		"\x1b[32m",
+		"\x1b[33m",
+		"\x1b[34;1m",
+		"\x1b[35m",
+		"\x1b[36m",
+	};
+
 	if (depth == 0) {
 		fprintf(out1, "\x1b[39m");
 		fprintf(out2, "\x1b[39m");
 	} else {
-		double h = ((double)depth - 0.5) * 60;
-		double s = 0.76, v = 1;
-		unsigned char r, g, b;
-		hsv_to_rgb(h, s, v, &r, &g, &b);
-
-		fprintf(out1, "\x1b[38;2;%i;%i;%im", r, g, b);
-		fprintf(out2, "\x1b[38;2;%i;%i;%im", r, g, b);
+		char *color = colors[depth % (sizeof(colors) / sizeof(*colors))];
+		fprintf(out1, "%s", color);
+		fprintf(out2, "%s", color);
 	}
 }
 
