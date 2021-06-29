@@ -6,6 +6,7 @@
 #include <errno.h>
 #include <math.h>
 #include <signal.h>
+#include <string.h>
 
 static void color(int depth, FILE *out1, FILE *out2) {
 	static char *colors[] = {
@@ -64,8 +65,33 @@ static void process(char c, FILE *out1, FILE *out2) {
 }
 
 int main(int argc, char *argv[]) {
-	if (argc == 1) {
-		printf("Usage: %s <command...>\n", argv[0]);
+	char *argv0 = argv[0];
+	int do_always_pager = 0;
+	int do_color = 1;
+	argc -= 1;
+	argv += 1;
+	while (argc > 0) {
+		if (strcmp(*argv, "-y") == 0 || strcmp(*argv, "--always") == 0) {
+			do_always_pager = 1;
+		} else if (strcmp(*argv, "-n") == 0 || strcmp(*argv, "--no-color") == 0) {
+			do_color = 0;
+		} else if (strcmp(*argv, "--") == 0) {
+			argv += 1;
+			argc -= 1;
+			break;
+		} else if ((*argv)[0] != '-') {
+			break;
+		}
+
+		argv += 1;
+		argc -= 1;
+	}
+
+	if (argc == 0) {
+		printf("Usage: %s [options] [--] <command...>\n", argv0);
+		printf("Options:\n");
+		printf("  -y|--always: Always show the pager, even if the command didn't error\n");
+		printf("  -n|--no-color: Don't color code nesting\n");
 		return EXIT_FAILURE;
 	}
 
@@ -88,7 +114,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	if (child == 0) { // Child
-		if (execvp(argv[1], argv + 1) < 0) {
+		if (execvp(argv[0], argv) < 0) {
 			perror("exec()");
 			return EXIT_FAILURE;
 		}
@@ -106,8 +132,14 @@ int main(int argc, char *argv[]) {
 			goto cleanup;
 		}
 
-		for (ssize_t i = 0; i < len; ++i)
-			process(buf[i], output, outfile);
+		if (do_color) {
+			for (ssize_t i = 0; i < len; ++i)
+				process(buf[i], output, outfile);
+		} else {
+			fwrite(buf, 1, len, output);
+			fwrite(buf, 1, len, outfile);
+		}
+
 		fflush(output);
 	}
 
@@ -119,8 +151,8 @@ cleanup:
 		(WIFEXITED(stat) && WEXITSTATUS(stat) != EXIT_SUCCESS) ||
 		WIFSIGNALED(stat);
 
-	// Only show pager if we errored
-	if (errored) {
+	// Only show pager if we errored (or if --always was passed)
+	if (errored || do_always_pager) {
 		fflush(outfile);
 		rewind(outfile);
 		FILE *proc = popen(pager, "w");
